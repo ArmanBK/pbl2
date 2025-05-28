@@ -75,3 +75,22 @@ export default function MotionVisualizer() {
             />
             <p>Frame {currentIndex}</p>
           </div>
+
+          <div style={{ background: '#f3f3f3', padding: '10px', borderRadius: '8px' }}>
+            <pre>{JSON.stringify(currentFrame, null, 2)}</pre>
+            {flags[currentIndex] && (
+              <p style={{ color: '#2563eb', fontWeight: 'bold' }}>
+                Flag: {flags[currentIndex]}
+              </p>
+            )}
+          </div>
+
+          <div>
+            <Button onClick={() => addFlag('T-cue')}>Add T-cue</Button>
+            <Button onClick={() => addFlag('T-first-movement')}>Add T-first-movement</Button>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
