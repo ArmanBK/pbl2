@@ -82,17 +82,40 @@ export default function MotionVisualizer() {
   const canvasRef = useRef();
   const [timeInput, setTimeInput] = useState('');
 
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    Papa.parse(file, {
-      header: true,
-      dynamicTyping: true,
-      complete: (result) => {
-        const filtered = result.data.filter((row) => Object.keys(row).length > 1);
+const handleFileUpload = (e) => {
+  const file = e.target.files[0];
+  Papa.parse(file, {
+    header: true,
+    dynamicTyping: true,
+    skipEmptyLines: true,
+    complete: (result) => {
+      try {
+        const filtered = result.data.filter(
+          (row) =>
+            row.timestamp !== undefined &&
+            row.timestamp !== null &&
+            !isNaN(row.timestamp) &&
+            Object.keys(row).some((k) => k.includes('KeypointType'))
+        );
+        if (filtered.length === 0) {
+          console.error('No valid rows found in CSV');
+          alert('CSV file does not contain valid keypoints or timestamps.');
+          return;
+        }
         setMotionData(filtered);
-      },
-    });
-  };
+        setCurrentIndex(0);
+      } catch (err) {
+        console.error('Failed to parse or load CSV:', err);
+        alert('Error loading CSV. Check the file format.');
+      }
+    },
+    error: (err) => {
+      console.error('PapaParse error:', err);
+      alert('Failed to parse the CSV file.');
+    },
+  });
+};
+
 
   const handleSliderChange = (value) => {
     setCurrentIndex(value[0]);
