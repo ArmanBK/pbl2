@@ -1,16 +1,26 @@
 import React, { useState } from 'react';
-
 import Papa from 'papaparse';
 
 const Button = ({ children, ...props }) => (
-  <button {...props} style={{ padding: '8px 12px', margin: '5px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px' }}>
+  <button
+    {...props}
+    style={{
+      padding: '8px 12px',
+      margin: '5px',
+      backgroundColor: '#3b82f6',
+      color: 'white',
+      border: 'none',
+      borderRadius: '6px',
+      cursor: 'pointer',
+    }}
+  >
     {children}
   </button>
 );
 
 const Slider = ({ min, max, value, onValueChange }) => (
   <input
-    type=\"range\"
+    type="range"
     min={min}
     max={max}
     value={value[0]}
@@ -49,41 +59,19 @@ export default function MotionVisualizer() {
   const currentFrame = motionData[currentIndex];
 
   return (
-    <div className="p-4 max-w-4xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold">Motion Estimation Visualizer</h1>
+    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: 'auto' }}>
+      <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Motion Estimation Visualizer</h1>
 
-      <input type="file" accept=".csv" onChange={handleFileUpload} className="mb-4" />
+      <input type="file" accept=".csv" onChange={handleFileUpload} style={{ marginTop: '10px' }} />
 
       {motionData.length > 0 && (
         <>
-          <div className="flex justify-between items-center">
+          <div style={{ marginTop: '20px' }}>
             <Slider
               min={0}
               max={motionData.length - 1}
               value={[currentIndex]}
               onValueChange={handleSliderChange}
-              className="w-full"
             />
-            <span className="ml-4">Frame {currentIndex}</span>
+            <p>Frame {currentIndex}</p>
           </div>
-
-          <div className="mt-4 border p-4 rounded-lg bg-gray-100">
-            <pre className="text-sm whitespace-pre-wrap">
-              {JSON.stringify(currentFrame, null, 2)}
-            </pre>
-            {flags[currentIndex] && (
-              <p className="text-blue-600 font-semibold mt-2">
-                Flag: {flags[currentIndex]}
-              </p>
-            )}
-          </div>
-
-          <div className="flex space-x-2 mt-4">
-            <Button onClick={() => addFlag('T-cue')}>Add T-cue</Button>
-            <Button onClick={() => addFlag('T-first-movement')}>Add T-first-movement</Button>
-          </div>
-        </>
-      )}
-    </div>
-  );
-}
