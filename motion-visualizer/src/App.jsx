@@ -29,7 +29,6 @@ const Slider = ({ min, max, value, onValueChange }) => (
   />
 );
 
-// Define connections between body parts (COCO format)
 const SKELETON_EDGES = [
   ['NOSE', 'LEFT_EYE'],
   ['NOSE', 'RIGHT_EYE'],
@@ -49,7 +48,6 @@ const SKELETON_EDGES = [
   ['RIGHT_KNEE', 'RIGHT_ANKLE'],
 ];
 
-// Draw a stick figure on canvas
 const drawSkeleton = (ctx, keypoints) => {
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
 
@@ -60,7 +58,7 @@ const drawSkeleton = (ctx, keypoints) => {
   SKELETON_EDGES.forEach(([a, b]) => {
     const p1 = keypoints[a];
     const p2 = keypoints[b];
-    if (p1 && p2 && p1.x && p2.x) {
+    if (p1 && p2 && p1.x != null && p2.x != null) {
       ctx.beginPath();
       ctx.moveTo(p1.x, p1.y);
       ctx.lineTo(p2.x, p2.y);
@@ -69,7 +67,7 @@ const drawSkeleton = (ctx, keypoints) => {
   });
 
   Object.values(keypoints).forEach((p) => {
-    if (p && p.x !== undefined) {
+    if (p && p.x != null && p.y != null) {
       ctx.beginPath();
       ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI);
       ctx.fill();
@@ -105,17 +103,17 @@ export default function MotionVisualizer() {
     });
   };
 
-const getKeypointsFromRow = (row) => {
-  const keypoints = {};
-  Object.entries(row).forEach(([key, value]) => {
-    const match = key.match(/^KeypointType\.(\w+)_([xy])$/);
-    if (match) {
-      const [, name, coord] = match;
-      if (!keypoints[name]) keypoints[name] = {};
-      keypoints[name][coord] = value;
-    }
-  });
-  return keypoints;
+  const getKeypointsFromRow = (row) => {
+    const keypoints = {};
+    Object.entries(row).forEach(([key, value]) => {
+      const match = key.match(/^KeypointType\.(\w+)_([xy])$/);
+      if (match) {
+        const [, name, coord] = match;
+        if (!keypoints[name]) keypoints[name] = {};
+        keypoints[name][coord] = value;
+      }
+    });
+    return keypoints;
   };
 
   useEffect(() => {
