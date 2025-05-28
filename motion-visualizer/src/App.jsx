@@ -1,7 +1,23 @@
 import React, { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Slider } from '@/components/ui/slider';
+
 import Papa from 'papaparse';
+
+const Button = ({ children, ...props }) => (
+  <button {...props} style={{ padding: '8px 12px', margin: '5px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '6px' }}>
+    {children}
+  </button>
+);
+
+const Slider = ({ min, max, value, onValueChange }) => (
+  <input
+    type=\"range\"
+    min={min}
+    max={max}
+    value={value[0]}
+    onChange={(e) => onValueChange([parseInt(e.target.value)])}
+    style={{ width: '100%' }}
+  />
+);
 
 export default function MotionVisualizer() {
   const [motionData, setMotionData] = useState([]);
