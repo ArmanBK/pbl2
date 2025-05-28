@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Papa from 'papaparse';
 
 const Button = ({ children, ...props }) => (
@@ -29,10 +29,59 @@ const Slider = ({ min, max, value, onValueChange }) => (
   />
 );
 
+// Define connections between body parts (COCO format)
+const SKELETON_EDGES = [
+  ['NOSE', 'LEFT_EYE'],
+  ['NOSE', 'RIGHT_EYE'],
+  ['LEFT_EYE', 'LEFT_EAR'],
+  ['RIGHT_EYE', 'RIGHT_EAR'],
+  ['LEFT_SHOULDER', 'RIGHT_SHOULDER'],
+  ['LEFT_SHOULDER', 'LEFT_ELBOW'],
+  ['LEFT_ELBOW', 'LEFT_WRIST'],
+  ['RIGHT_SHOULDER', 'RIGHT_ELBOW'],
+  ['RIGHT_ELBOW', 'RIGHT_WRIST'],
+  ['LEFT_SHOULDER', 'LEFT_HIP'],
+  ['RIGHT_SHOULDER', 'RIGHT_HIP'],
+  ['LEFT_HIP', 'RIGHT_HIP'],
+  ['LEFT_HIP', 'LEFT_KNEE'],
+  ['LEFT_KNEE', 'LEFT_ANKLE'],
+  ['RIGHT_HIP', 'RIGHT_KNEE'],
+  ['RIGHT_KNEE', 'RIGHT_ANKLE'],
+];
+
+// Draw a stick figure on canvas
+const drawSkeleton = (ctx, keypoints) => {
+  ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+
+  ctx.strokeStyle = '#3b82f6';
+  ctx.lineWidth = 2;
+  ctx.fillStyle = 'red';
+
+  SKELETON_EDGES.forEach(([a, b]) => {
+    const p1 = keypoints[a];
+    const p2 = keypoints[b];
+    if (p1 && p2 && p1.x && p2.x) {
+      ctx.beginPath();
+      ctx.moveTo(p1.x, p1.y);
+      ctx.lineTo(p2.x, p2.y);
+      ctx.stroke();
+    }
+  });
+
+  Object.values(keypoints).forEach((p) => {
+    if (p && p.x !== undefined) {
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, 3, 0, 2 * Math.PI);
+      ctx.fill();
+    }
+  });
+};
+
 export default function MotionVisualizer() {
   const [motionData, setMotionData] = useState([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flags, setFlags] = useState({});
+  const canvasRef = useRef();
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -40,7 +89,7 @@ export default function MotionVisualizer() {
       header: true,
       dynamicTyping: true,
       complete: (result) => {
-        setMotionData(result.data);
+        setMotionData(result.data.filter((row) => Object.keys(row).length > 0));
       },
     });
   };
@@ -55,6 +104,28 @@ export default function MotionVisualizer() {
       [currentIndex]: type,
     });
   };
+
+const getKeypointsFromRow = (row) => {
+  const keypoints = {};
+  Object.entries(row).forEach(([key, value]) => {
+    const match = key.match(/^KeypointType\.(\w+)_([xy])$/);
+    if (match) {
+      const [, name, coord] = match;
+      if (!keypoints[name]) keypoints[name] = {};
+      keypoints[name][coord] = value;
+    }
+  });
+  return keypoints;
+  };
+
+  useEffect(() => {
+    if (motionData.length > 0 && canvasRef.current) {
+      const ctx = canvasRef.current.getContext('2d');
+      const row = motionData[currentIndex];
+      const keypoints = getKeypointsFromRow(row);
+      drawSkeleton(ctx, keypoints);
+    }
+  }, [motionData, currentIndex]);
 
   const currentFrame = motionData[currentIndex];
 
@@ -75,6 +146,13 @@ export default function MotionVisualizer() {
             />
             <p>Frame {currentIndex}</p>
           </div>
+
+          <canvas
+            ref={canvasRef}
+            width={640}
+            height={480}
+            style={{ border: '1px solid #ccc', marginBottom: '10px' }}
+          />
 
           <div style={{ background: '#f3f3f3', padding: '10px', borderRadius: '8px' }}>
             <pre>{JSON.stringify(currentFrame, null, 2)}</pre>
