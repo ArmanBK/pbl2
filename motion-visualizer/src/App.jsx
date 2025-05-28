@@ -80,6 +80,7 @@ export default function MotionVisualizer() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [flags, setFlags] = useState({});
   const canvasRef = useRef();
+  const [timeInput, setTimeInput] = useState('');
 
   const handleFileUpload = (e) => {
     const file = e.target.files[0];
@@ -87,7 +88,8 @@ export default function MotionVisualizer() {
       header: true,
       dynamicTyping: true,
       complete: (result) => {
-        setMotionData(result.data.filter((row) => Object.keys(row).length > 0));
+        const filtered = result.data.filter((row) => Object.keys(row).length > 1);
+        setMotionData(filtered);
       },
     });
   };
@@ -103,6 +105,18 @@ export default function MotionVisualizer() {
     });
   };
 
+  const downloadAnnotatedData = () => {
+    if (!motionData.length) return;
+    const annotated = motionData.map((row, index) => ({ ...row, Flag: flags[index] || '' }));
+    const csv = Papa.unparse(annotated);
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'annotated_motion_data.csv';
+    a.click();
+  };
+
   const getKeypointsFromRow = (row) => {
     const keypoints = {};
     Object.entries(row).forEach(([key, value]) => {
@@ -114,6 +128,14 @@ export default function MotionVisualizer() {
       }
     });
     return keypoints;
+  };
+
+  const goToTime = () => {
+    const time = parseFloat(timeInput);
+    if (!isNaN(time)) {
+      const index = motionData.findIndex((row) => row.timestamp >= time);
+      if (index !== -1) setCurrentIndex(index);
+    }
   };
 
   useEffect(() => {
@@ -128,7 +150,7 @@ export default function MotionVisualizer() {
   const currentFrame = motionData[currentIndex];
 
   return (
-    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '800px', margin: 'auto' }}>
+    <div style={{ padding: '20px', fontFamily: 'sans-serif', maxWidth: '900px', margin: 'auto' }}>
       <h1 style={{ fontSize: '24px', fontWeight: 'bold' }}>Motion Estimation Visualizer</h1>
 
       <input type="file" accept=".csv" onChange={handleFileUpload} style={{ marginTop: '10px' }} />
@@ -142,7 +164,23 @@ export default function MotionVisualizer() {
               value={[currentIndex]}
               onValueChange={handleSliderChange}
             />
-            <p>Frame {currentIndex}</p>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Button onClick={() => setCurrentIndex((i) => Math.max(0, i - 1))}>Previous</Button>
+              <p>
+                Frame {currentIndex} / Time: {currentFrame?.timestamp?.toFixed(2)}s
+              </p>
+              <Button onClick={() => setCurrentIndex((i) => Math.min(motionData.length - 1, i + 1))}>Next</Button>
+            </div>
+            <div style={{ marginTop: '10px' }}>
+              <input
+                type="text"
+                value={timeInput}
+                onChange={(e) => setTimeInput(e.target.value)}
+                placeholder="Jump to time (s)"
+                style={{ padding: '6px', border: '1px solid #ccc', borderRadius: '6px' }}
+              />
+              <Button onClick={goToTime}>Go</Button>
+            </div>
           </div>
 
           <canvas
@@ -164,6 +202,7 @@ export default function MotionVisualizer() {
           <div>
             <Button onClick={() => addFlag('T-cue')}>Add T-cue</Button>
             <Button onClick={() => addFlag('T-first-movement')}>Add T-first-movement</Button>
+            <Button onClick={downloadAnnotatedData}>Download CSV</Button>
           </div>
         </>
       )}
