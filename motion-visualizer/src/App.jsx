@@ -87,31 +87,23 @@ const handleFileUpload = (e) => {
   Papa.parse(file, {
     header: true,
     dynamicTyping: true,
-    skipEmptyLines: true,
     complete: (result) => {
-      try {
-        const filtered = result.data.filter(
-          (row) =>
-            row.timestamp !== undefined &&
-            row.timestamp !== null &&
-            !isNaN(row.timestamp) &&
-            Object.keys(row).some((k) => k.includes('KeypointType'))
-        );
-        if (filtered.length === 0) {
-          console.error('No valid rows found in CSV');
-          alert('CSV file does not contain valid keypoints or timestamps.');
-          return;
-        }
-        setMotionData(filtered);
-        setCurrentIndex(0);
-      } catch (err) {
-        console.error('Failed to parse or load CSV:', err);
-        alert('Error loading CSV. Check the file format.');
-      }
-    },
-    error: (err) => {
-      console.error('PapaParse error:', err);
-      alert('Failed to parse the CSV file.');
+      const raw = result.data.filter((row) => Object.keys(row).length > 1 && row.timestamp);
+
+      // Parse timestamps to seconds
+      const parsed = raw.map((row, i) => {
+        const t = new Date(row.timestamp);
+        return { ...row, _parsedTimestamp: t.getTime() / 1000 };
+      });
+
+      const start = parsed[0]._parsedTimestamp;
+      const withRelativeTime = parsed.map((row) => ({
+        ...row,
+        timestamp: row._parsedTimestamp - start,
+      }));
+
+      setMotionData(withRelativeTime);
+      setCurrentIndex(0);
     },
   });
 };
